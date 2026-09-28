@@ -1,0 +1,12 @@
+{
+  "title": "Кадровая динамика — СППР",
+  "language": "ru",
+  "description": "Analyzes and forecasts teacher workforce mobility in schools to support education leaders in managing staffing dynamics and planning effectively.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

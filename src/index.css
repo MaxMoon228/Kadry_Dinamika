@@ -1,0 +1,448 @@
+@import "tailwindcss";
+
+/*
+ * Шрифты: основной текст — TT Rounds Neue, заголовки и крупные числа — TT Fellows,
+ * дополнительный — Comic Sans. TT-гарнитуры коммерческие (TypeType): используется
+ * установленная в системе версия (local) либо лицензионные файлы из public/fonts/.
+ */
+@font-face {
+  font-family: "TT Rounds Neue";
+  src:
+    local("TT Rounds Neue"),
+    local("TTRoundsNeue-Regular"),
+    url("/fonts/TTRoundsNeue-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "TT Rounds Neue";
+  src:
+    local("TT Rounds Neue Medium"),
+    local("TTRoundsNeue-Medium"),
+    url("/fonts/TTRoundsNeue-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "TT Rounds Neue";
+  src:
+    local("TT Rounds Neue Bold"),
+    local("TTRoundsNeue-Bold"),
+    url("/fonts/TTRoundsNeue-Bold.woff2") format("woff2");
+  font-weight: 600 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "TT Fellows";
+  src:
+    local("TT Fellows"),
+    local("TTFellows-Regular"),
+    url("/fonts/TTFellows-Regular.woff2") format("woff2");
+  font-weight: 400 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "TT Fellows";
+  src:
+    local("TT Fellows DemiBold"),
+    local("TTFellows-DemiBold"),
+    url("/fonts/TTFellows-DemiBold.woff2") format("woff2");
+  font-weight: 600 700;
+  font-display: swap;
+}
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Semantic design tokens. Компоненты используют только эти переменные
+ * (напрямую или через Tailwind-утилиты из @theme inline ниже).
+ * Палитра: lavender / violet / indigo / blue.
+ */
+:root {
+  color-scheme: light;
+
+  --bg: #f7f7fc;
+  --surface: #ffffff;
+  --surface-secondary: #f2f1fa;
+  --surface-hover: #ebe9f7;
+  --surface-sunken: #eeedf7;
+
+  --text-primary: #1b1a2e;
+  --text-secondary: #474463;
+  --text-muted: #625f80;
+  --text-faint: #9794b3;
+
+  --border: #e3e1f0;
+  --border-subtle: #edecf6;
+  --border-strong: #cfcce3;
+
+  --accent: #6d28d9;
+  --accent-hover: #5b21b6;
+  --accent-soft: #efeafe;
+  --accent-strong: #5b21b6;
+  --on-accent: #ffffff;
+  --accent-2: #4f46e5;
+  --accent-3: #2563eb;
+  --focus-ring: rgba(124, 58, 237, 0.28);
+
+  /* Неон и градиенты (сдержанные в светлой теме) */
+  --neon-violet: #8b5cf6;
+  --neon-indigo: #6366f1;
+  --neon-blue: #3b82f6;
+  --neon-cyan: #22b8e6;
+  --neon-pink: #d946ef;
+  --grad-accent: linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #3b82f6 100%);
+  --grad-accent-soft: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(59, 130, 246, 0.08));
+  --grad-text: linear-gradient(90deg, #6d28d9, #4f46e5 45%, #2563eb);
+  --grad-line: linear-gradient(90deg, #a78bfa, #818cf8 50%, #60a5fa);
+  --glow-accent: rgba(124, 58, 237, 0.22);
+  --glow-strong: rgba(124, 58, 237, 0.35);
+  --glow-border: rgba(139, 92, 246, 0.35);
+  --menu-bg: rgba(255, 255, 255, 0.72);
+
+  /* Статусы мобильности: различаются тоном, светлотой и иконкой */
+  --stay: #3b5bdb;
+  --stay-soft: #e8edfd;
+  --stay-fg: #2c45a8;
+  --move: #e39a2d;
+  --move-soft: #fdf2df;
+  --move-fg: #8a5206;
+  --leave: #d13f78;
+  --leave-soft: #fce8f0;
+  --leave-fg: #a42459;
+
+  --warn: #b45309;
+  --warn-soft: #fdf3e2;
+  --danger: #c2305f;
+  --danger-soft: #fce8ef;
+  --success: #2f7d6d;
+
+  /* Графики */
+  --chart-1: #7c3aed;
+  --chart-2: #4f46e5;
+  --chart-3: #3b82f6;
+  --chart-4: #a78bfa;
+  --chart-5: #6366f1;
+  --chart-6: #93c5fd;
+  --seq-1: #ddd6fe;
+  --seq-2: #c4b5fd;
+  --seq-3: #a78bfa;
+  --seq-4: #7c3aed;
+  --seq-5: #5b21b6;
+  --chart-grid: #ebe9f5;
+  --chart-axis: #6b6888;
+  --chart-cursor: rgba(124, 58, 237, 0.06);
+  --heat-rgb: 209, 63, 120;
+
+  --tooltip-bg: #ffffff;
+  --tooltip-border: #e3e1f0;
+  --tooltip-text: #1b1a2e;
+  --overlay: rgba(27, 26, 46, 0.32);
+  --shadow-sm: 0 1px 2px rgba(35, 28, 80, 0.05), 0 1px 3px rgba(35, 28, 80, 0.04);
+  --shadow-lg: 0 12px 32px rgba(35, 28, 80, 0.14);
+  --skeleton: #eceaf6;
+  --skeleton-shine: #f6f5fc;
+  --scrollbar: #cfcce3;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #090b13;
+  --surface: #0f1220;
+  --surface-secondary: #151827;
+  --surface-hover: #1c2032;
+  --surface-sunken: #0c0e19;
+
+  --text-primary: #ecebfa;
+  --text-secondary: #c3c0dd;
+  --text-muted: #9a96ba;
+  --text-faint: #6d6a8f;
+
+  --border: #252a40;
+  --border-subtle: #1b1f31;
+  --border-strong: #343a56;
+
+  --accent: #a78bfa;
+  --accent-hover: #c4b5fd;
+  --accent-soft: #231c43;
+  --accent-strong: #c4b5fd;
+  --on-accent: #140c2e;
+  --accent-2: #818cf8;
+  --accent-3: #60a5fa;
+  --focus-ring: rgba(167, 139, 250, 0.35);
+
+  --neon-violet: #b18cff;
+  --neon-indigo: #8b93ff;
+  --neon-blue: #5fa8ff;
+  --neon-cyan: #5ad7ff;
+  --neon-pink: #f07bff;
+  --grad-accent: linear-gradient(135deg, #a78bfa 0%, #818cf8 50%, #60a5fa 100%);
+  --grad-accent-soft: linear-gradient(135deg, rgba(167, 139, 250, 0.16), rgba(96, 165, 250, 0.1));
+  --grad-text: linear-gradient(90deg, #c4b5fd, #a5b4fc 45%, #7dd3fc);
+  --grad-line: linear-gradient(90deg, #a78bfa, #818cf8 50%, #5ad7ff);
+  --glow-accent: rgba(167, 139, 250, 0.28);
+  --glow-strong: rgba(167, 139, 250, 0.5);
+  --glow-border: rgba(177, 140, 255, 0.45);
+  --menu-bg: rgba(15, 18, 32, 0.66);
+
+  --stay: #7c9cff;
+  --stay-soft: #19224a;
+  --stay-fg: #b3c4ff;
+  --move: #f0b557;
+  --move-soft: #2e2413;
+  --move-fg: #f6cd8a;
+  --leave: #f0719f;
+  --leave-soft: #36172a;
+  --leave-fg: #f7a3c2;
+
+  --warn: #f0b557;
+  --warn-soft: #2a2112;
+  --danger: #f0719f;
+  --danger-soft: #36172a;
+  --success: #6fcfb8;
+
+  --chart-1: #a78bfa;
+  --chart-2: #818cf8;
+  --chart-3: #60a5fa;
+  --chart-4: #c4b5fd;
+  --chart-5: #6366f1;
+  --chart-6: #93c5fd;
+  --seq-1: #2e2658;
+  --seq-2: #4c3d91;
+  --seq-3: #6d5bd0;
+  --seq-4: #9b87f5;
+  --seq-5: #cdbfff;
+  --chart-grid: #1f2338;
+  --chart-axis: #928eb3;
+  --chart-cursor: rgba(167, 139, 250, 0.08);
+  --heat-rgb: 240, 113, 159;
+
+  --tooltip-bg: #151827;
+  --tooltip-border: #2c3150;
+  --tooltip-text: #ecebfa;
+  --overlay: rgba(3, 4, 10, 0.62);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+  --skeleton: #181c2d;
+  --skeleton-shine: #21263b;
+  --scrollbar: #343a56;
+}
+
+@theme inline {
+  --font-sans: "TT Rounds Neue", "Comic Sans MS", "Comic Sans", ui-rounded, sans-serif;
+  --font-display:
+    "TT Fellows", "TT Rounds Neue", "Comic Sans MS", "Comic Sans", ui-rounded, sans-serif;
+  --font-mono: "TT Rounds Neue", "Comic Sans MS", "Comic Sans", ui-rounded, sans-serif;
+
+  --color-canvas: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-secondary);
+  --color-hover: var(--surface-hover);
+  --color-sunken: var(--surface-sunken);
+
+  --color-fg: var(--text-primary);
+  --color-fg-2: var(--text-secondary);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+
+  --color-line: var(--border);
+  --color-line-2: var(--border-subtle);
+  --color-line-strong: var(--border-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-strong: var(--accent-strong);
+  --color-on-accent: var(--on-accent);
+
+  --color-stay: var(--stay);
+  --color-stay-soft: var(--stay-soft);
+  --color-stay-fg: var(--stay-fg);
+  --color-move: var(--move);
+  --color-move-soft: var(--move-soft);
+  --color-move-fg: var(--move-fg);
+  --color-leave: var(--leave);
+  --color-leave-soft: var(--leave-soft);
+  --color-leave-fg: var(--leave-fg);
+
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+}
+
+html {
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv02", "cv03", "cv04", "tnum";
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+*:hover {
+  scrollbar-color: var(--scrollbar) transparent;
+}
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*:hover::-webkit-scrollbar-thumb {
+  background: var(--scrollbar);
+  background-clip: content-box;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* ---------- Неон и градиенты ---------- */
+.grad-text {
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.grad-accent {
+  background: var(--grad-accent);
+}
+
+.card-glow {
+  position: relative;
+  transition:
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.25s ease;
+}
+.card-glow:hover {
+  border-color: var(--glow-border);
+  box-shadow:
+    var(--shadow-sm),
+    0 10px 36px -14px var(--glow-strong);
+}
+
+/* Тонкая неоновая линия сверху карточки */
+.card-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0 16px auto 16px;
+  height: 1px;
+  background: var(--grad-line);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+.card-glow:hover::before {
+  opacity: 0.9;
+}
+
+.btn-neon {
+  background: var(--grad-accent);
+  color: #fff;
+  box-shadow: 0 6px 20px -8px var(--glow-strong);
+  transition:
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+[data-theme="dark"] .btn-neon {
+  color: var(--on-accent);
+}
+.btn-neon:hover:not(:disabled) {
+  filter: brightness(1.06) saturate(1.1);
+  box-shadow: 0 8px 28px -6px var(--glow-strong);
+}
+
+.neon-dot {
+  box-shadow: 0 0 8px currentColor;
+}
+
+.ambient-bg {
+  background:
+    radial-gradient(1100px 520px at 12% -10%, var(--glow-accent), transparent 60%),
+    radial-gradient(900px 480px at 100% 0%, rgba(59, 130, 246, 0.1), transparent 60%), var(--bg);
+  background-attachment: fixed;
+}
+
+.menu-panel {
+  background: var(--menu-bg);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-glow,
+  .card-glow::before,
+  .btn-neon {
+    transition: none;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton) 25%,
+    var(--skeleton-shine) 37%,
+    var(--skeleton) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-shine 1.4s ease infinite;
+}
+@keyframes skeleton-shine {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+/* Recharts: подписи и курсоры следуют теме */
+.recharts-text {
+  fill: var(--chart-axis);
+}
+.recharts-default-tooltip {
+  background: var(--tooltip-bg) !important;
+  border-color: var(--tooltip-border) !important;
+  color: var(--tooltip-text);
+}
+.recharts-tooltip-label {
+  color: var(--tooltip-text);
+}
