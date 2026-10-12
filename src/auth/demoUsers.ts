@@ -4,10 +4,10 @@
  */
 
 import type { Role, User } from "../domain/user";
-import { getMockIndex } from "../data/mock/mockDataset";
+import { getActiveIndex } from "../data/mock/mockDataset";
 
 export function demoUsers(): Record<Role, User> {
-  const schools = getMockIndex().ds.schools;
+  const schools = getActiveIndex().ds.schools;
   return {
     education_head: {
       id: "u-head",

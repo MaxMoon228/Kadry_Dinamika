@@ -6,6 +6,8 @@
 
 import type { CountByGroup, PageRequest, SchoolId, TeacherId, Year } from "../../domain/common";
 import type { TeacherEducation } from "../../domain/education";
+import type { TeacherYearFeatures } from "../../domain/features";
+import type { OptionalField } from "./normalized";
 import type {
   MobilityClass,
   MobilityDistribution,
@@ -31,7 +33,14 @@ export interface GlobalFilters {
 }
 
 export interface Dictionaries {
-  meta: { datasetVersion: string; updatedAt: string; isMock: boolean };
+  meta: {
+    datasetVersion: string;
+    updatedAt: string;
+    isMock: boolean;
+    origin: string;
+    /** Поля, отсутствующие в подключённом источнике: зависящие от них разрезы скрываются. */
+    unavailableFields: OptionalField[];
+  };
   /** Школа пользователя для school scope (директор); null для system scope. */
   scopeSchool: School | null;
   years: Year[];
@@ -57,13 +66,17 @@ export interface DataSourceInfo {
   sourceFieldCount: number;
   rawRowCount: number;
   normalizedRecordCount: number;
-  status: "mock" | "validated" | "needs_review";
+  /** real — реальная выгрузка, обработанная пайплайном ноутбука (локальный режим). */
+  status: "mock" | "real" | "validated" | "needs_review";
 }
 
 export interface DataCatalog {
   isMock: boolean;
   datasetVersion: string;
   updatedAt: string;
+  origin: string;
+  /** Размер итоговой таблицы (строки × признаки), если источник её предоставляет. */
+  finalTable: { rows: number; columns: number; knownTargetRows: number } | null;
   period: { from: Year; to: Year };
   sources: DataSourceInfo[];
   quality: {
@@ -72,6 +85,7 @@ export interface DataCatalog {
     conflictingTeacherYears: number;
     multiSchoolTeacherYears: number;
     unknownSchoolRows: number;
+    typosFixed: number | null;
     missingValues: { field: string; count: number }[];
   };
 }
@@ -232,6 +246,8 @@ export interface TeacherProfileDto {
   derived: DerivedTeacherFeatures;
   trajectory: TeacherTrajectoryPoint[];
   outcomes: { period: MobilityPeriod; status: MobilityClass }[];
+  /** Строка итоговой таблицы df_final за год среза; null — источник её не содержит. */
+  datasetFeatures: TeacherYearFeatures | null;
 }
 
 // ------------------------------------------------------------------ analytics
@@ -275,6 +291,39 @@ export interface ScatterPoint {
   x: number;
   y: number;
   status: MobilityClass | null;
+}
+
+/**
+ * Точка графика «Стаж × число разных предметов» (ноутбук «Неделя 5»): один педагог в одном
+ * году среза. Краткая карточка нужна для всплывающей подсказки без отдельного запроса.
+ */
+
+export interface LoadPoint {
+  teacherId: TeacherId;
+  year: Year;
+  /** Стаж педагогической работы, лет. */
+  x: number;
+  /** Число разных предметов (n_unique_subjects). */
+  y: number;
+  critical: boolean;
+  schoolName: string;
+  age: number | null;
+  mainPosition: string | null;
+  qualificationCategory: string | null;
+  topSubjects: string[];
+  /** Исход периода year → year+1; null — ещё не наблюдается. */
+  status: MobilityClass | null;
+}
+
+export interface LoadScatterDto {
+  years: Year[];
+  points: LoadPoint[];
+  total: number;
+  criticalCount: number;
+  /** Доля ушедших из системы: среди «критических» и среди остальных (по известным исходам). */
+  leaveShareCritical: number | null;
+  leaveShareOther: number | null;
+  thresholds: { maxExperienceExclusive: number; minSubjects: number };
 }
 
 export interface HeatmapDto {

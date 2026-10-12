@@ -70,12 +70,20 @@ export default function DataModel() {
       <Async state={catalog} skeleton={<Skeleton height={160} />}>
         {(c) => (
           <>
-            {c.isMock && (
+            {c.isMock ? (
               <MockNotice>
                 Сейчас подключён синтетический набор ({c.datasetVersion}). Структура таблиц
                 соответствует описанию данных ДОНМ 2022–2024 гг., значения вымышлены. Реальный
-                датасет будет подключён через backend (docs/DATA_INTEGRATION_PLAN.md).
+                датасет подключается через VITE_DATA_SOURCE=local (docs/DATA_INTEGRATION_PLAN.md).
               </MockNotice>
+            ) : (
+              <Card className="card-glow p-4 text-[13px] leading-relaxed text-fg-2">
+                <span className="font-semibold text-fg">Подключены реальные данные ДОНМ.</span>{" "}
+                Источник: {c.origin}.
+                {c.finalTable &&
+                  ` Итоговая таблица — ${fmt(c.finalTable.rows)} строк «педагог × год» × ${c.finalTable.columns} признаков, известный исход у ${fmt(c.finalTable.knownTargetRows)} строк (2022 и 2023 гг.).`}{" "}
+                Идентификаторы педагогов обезличены.
+              </Card>
             )}
             <div>
               <h3 className="mb-3 text-[15px] font-semibold text-fg">Источники данных</h3>
@@ -86,7 +94,7 @@ export default function DataModel() {
                       <span className="text-[14px] font-semibold text-fg">{s.title}</span>
                       <Badge
                         tone={
-                          s.status === "validated"
+                          s.status === "validated" || s.status === "real"
                             ? "accent"
                             : s.status === "mock"
                               ? "warn"
@@ -95,9 +103,11 @@ export default function DataModel() {
                       >
                         {s.status === "mock"
                           ? "mock"
-                          : s.status === "validated"
-                            ? "Проверено"
-                            : "Требует проверки"}
+                          : s.status === "real"
+                            ? "Реальные данные"
+                            : s.status === "validated"
+                              ? "Проверено"
+                              : "Требует проверки"}
                       </Badge>
                     </div>
                     <p className="mt-2 text-[12px] leading-snug text-muted">{s.description}</p>
@@ -130,6 +140,9 @@ export default function DataModel() {
                   v={fmt(c.quality.multiSchoolTeacherYears)}
                 />
                 <Row k="Строк со школой вне справочника" v={fmt(c.quality.unknownSchoolRows)} />
+                {c.quality.typosFixed != null && (
+                  <Row k="Исправлено слов с опечатками" v={fmt(c.quality.typosFixed)} />
+                )}
                 {c.quality.missingValues.map((m) => (
                   <Row key={m.field} k={`Пропуски: ${m.field}`} v={fmt(m.count)} />
                 ))}

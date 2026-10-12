@@ -27,6 +27,7 @@ import type {
   DynamicsSummary,
   GlobalFilters,
   HeatmapDto,
+  LoadScatterDto,
   MobilityDimension,
   MobilityOverview,
   NumericMetric,
@@ -76,6 +77,8 @@ export interface AnalyticsRepository {
     limit: number,
   ): Promise<ScatterPoint[]>;
   getHeatmap(filters: GlobalFilters): Promise<HeatmapDto>;
+  /** Нагрузка молодых педагогов: стаж × число предметов; allYears — все срезы сразу. */
+  getLoadScatter(filters: GlobalFilters, allYears: boolean): Promise<LoadScatterDto>;
 }
 
 export interface DataCatalogRepository {
@@ -97,7 +100,9 @@ export interface ModelService {
   getMonitoringSummary(): Promise<InferenceMonitoringSummary>;
 }
 
-export type DataSourceKind = "mock" | "api";
+/** mock — синтетика; local — реальный датасет из public/data (in-memory, статический JSON); api — backend. */
+
+export type DataSourceKind = "mock" | "local" | "api";
 
 export interface DataSource {
   kind: DataSourceKind;

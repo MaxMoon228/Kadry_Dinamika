@@ -30,6 +30,8 @@ jobs:
       - run: pnpm build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_DATA_SOURCE: local
+          VITE_MOCK_LATENCY_MS: "0"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

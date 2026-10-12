@@ -55,14 +55,19 @@ function Breakdown({
 
 export default function Mobility() {
   const data = useData();
-  const { filters } = useApp();
+  const { filters, dictionaries } = useApp();
   const { scope } = useSession();
   const [dim, setDim] = useState<MobilityDimension>("age_group");
   const overview = useAsync(
     () => data.analytics.getMobilityOverview(filters),
     [data, filters.year, filters.district],
   );
-  const dims = DIMENSIONS.filter((d) => !d.systemOnly || scope.kind === "system");
+  const preprofMissing = dictionaries.meta.unavailableFields.includes("preprofessional");
+  const dims = DIMENSIONS.filter(
+    (d) =>
+      (!d.systemOnly || scope.kind === "system") &&
+      !(d.value === "preprofessional" && preprofMissing),
+  );
   return (
     <div className="space-y-6">
       <PageHead

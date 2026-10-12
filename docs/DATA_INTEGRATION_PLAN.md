@@ -130,3 +130,19 @@ for t in years where t+1 in years:
 4. Сверить отчёт качества с ожиданиями и ответить на открытые вопросы из раздела 1.
 5. Построить `marts.*` и эндпоинты из `API_CONTRACT.md`.
 6. Во frontend: `VITE_DATA_SOURCE=api`, `VITE_API_BASE_URL=…`. Изменения в страницах не требуются.
+
+## Локальный режим с реальными данными
+
+Промежуточный шаг до backend: реальные данные показываются без сервера БД — локально и на GitHub Pages. **Реализовано.**
+
+```
+D:/CU/KAdri/*.xlsx ──► scripts/real-data/build_real_dataset.py ──► public/data/real-dataset.json (в репозитории)
+                         (пайплайн ноутбука «Неделя 4»)                       │
+                                             vite dev / GitHub Pages: <BASE_URL>data/real-dataset.json
+                                                                              │
+                     bootstrapDataSource() → decodeRealDataset() → DatasetIndex → in-memory репозитории (scope, DTO)
+```
+
+- Формат `kd-real-dataset@1`: колоночные массивы и словарь строк (~15 МБ, сжато ~3 МБ). Схема описана в `RealDatasetFile` (`src/data/local/realDataset.ts`).
+- Сверка с ноутбуком (`realDataset.test.ts`): 52 723 строк «педагог × год», 34 790 известных исходов, 266 школ, 561 исправленная опечатка, доля ушедших 12,9%.
+- Ограничения: данные целиком загружаются в браузер, поэтому scope директора здесь реализован так же, как в mock, и это **не** мера безопасности. Для разграничения доступа нужен backend (раздел 12).

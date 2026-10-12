@@ -232,7 +232,17 @@ function Layout() {
               {filters.district && (
                 <Chip label={filters.district} onRemove={() => setFilters({ district: null })} />
               )}
-              {dictionaries.meta.isMock && <DemoTag />}
+              {dictionaries.meta.isMock ? (
+                <DemoTag />
+              ) : (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-md border border-[var(--glow-border)] bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent-strong"
+                  title={dictionaries.meta.origin}
+                >
+                  <span className="neon-dot h-1.5 w-1.5 rounded-full bg-accent" />
+                  Реальные данные ДОНМ
+                </span>
+              )}
               <span className="hidden text-[11px] text-muted xl:inline">
                 Данные:{" "}
                 <span className="tnum font-medium text-fg-2">{dictionaries.meta.updatedAt}</span>

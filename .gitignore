@@ -5,6 +5,7 @@ build/
 .env*
 !.env.example
 .vite/
+__pycache__/
 vite.config.*.timestamp-*
 *.tsbuildinfo
 *-debug.log*

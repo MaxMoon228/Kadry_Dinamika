@@ -38,6 +38,7 @@ react(),
       watch: {
         ignored: [
           '**/.figma/**',
+          '**/public/data/**',
 ],
       },
     },

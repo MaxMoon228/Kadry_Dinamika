@@ -29,7 +29,8 @@ import { useAsync } from "../hooks/useAsync";
 
 export default function Staff() {
   const data = useData();
-  const { filters } = useApp();
+  const { filters, dictionaries } = useApp();
+  const hasPreprof = !dictionaries.meta.unavailableFields.includes("preprofessional");
   const [tab, setTab] = useState<"structure" | "registry">("structure");
   const comp = useAsync(
     () => data.analytics.getComposition(filters),
@@ -97,15 +98,21 @@ export default function Staff() {
               >
                 <HBars data={c.bySubject} />
               </ChartCard>
-              <ChartCard title="Классное руководство" subtitle="Доля педагогов, %">
+              <ChartCard
+                title="Классное руководство"
+                subtitle="Доля педагогов, %"
+                className={hasPreprof ? undefined : "lg:col-span-2"}
+              >
                 <RatioBar value={c.classTeacherShare} label="Ведут классное руководство" />
               </ChartCard>
-              <ChartCard
-                title="Предпрофессиональные классы"
-                subtitle="Доля педагогов, преподающих в предпроф. классах, %"
-              >
-                <RatioBar value={c.preprofessionalShare} label="Преподают в предпроф. классах" />
-              </ChartCard>
+              {hasPreprof && (
+                <ChartCard
+                  title="Предпрофессиональные классы"
+                  subtitle="Доля педагогов, преподающих в предпроф. классах, %"
+                >
+                  <RatioBar value={c.preprofessionalShare} label="Преподают в предпроф. классах" />
+                </ChartCard>
+              )}
             </div>
           )}
         </Async>
@@ -156,6 +163,7 @@ const PAGE_SIZE = 25;
 function Registry() {
   const data = useData();
   const { filters, navigate, dictionaries } = useApp();
+  const hasPreprof = !dictionaries.meta.unavailableFields.includes("preprofessional");
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [pf, setPf] = useState<PageFilters>(EMPTY);
@@ -306,7 +314,7 @@ function Registry() {
                     {th("pedagogicalExperienceYears", "Пед. стаж", true)}
                     {th("qualificationCategory", "Категория")}
                     <Th>Кл. рук.</Th>
-                    <Th>Предпроф.</Th>
+                    {hasPreprof && <Th>Предпроф.</Th>}
                     <Th>Исход {nextPeriod ? `${nextPeriod.fromYear}→${nextPeriod.toYear}` : ""}</Th>
                     <Th />
                   </tr>
@@ -330,7 +338,9 @@ function Registry() {
                       <td className="px-3 py-2">
                         {t.isClassTeacher == null ? "—" : t.isClassTeacher ? "Да" : "Нет"}
                       </td>
-                      <td className="px-3 py-2">{t.preprofessional ? "Да" : "—"}</td>
+                      {hasPreprof && (
+                        <td className="px-3 py-2">{t.preprofessional ? "Да" : "—"}</td>
+                      )}
                       <td className="px-3 py-2">
                         {t.outcome ? <StatusBadge status={t.outcome.status} /> : <PendingBadge />}
                       </td>

@@ -28,6 +28,7 @@ import {
 import { useData } from "../data/DataProvider";
 import { MOBILITY_KEYS } from "../domain/mobility";
 import { useAsync } from "../hooks/useAsync";
+import LoadSection from "./LoadSection";
 import SchoolTable from "./SchoolTable";
 import { NoPeriodState, deltaPp, mobilitySegments, periodCaption, periodRows } from "./shared";
 
@@ -241,6 +242,7 @@ export default function Overview() {
                   </div>
                 </ChartCard>
               </div>
+              <LoadSection />
               {system ? (
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
                   <ChartCard

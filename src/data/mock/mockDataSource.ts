@@ -14,11 +14,15 @@ import {
 
 /** MOCK / DEMO источник данных для конкретного пользователя (имитация серверного scope). */
 
-export function createMockDataSource(user: User, latencyMs = 0): DataSource {
+export function createMockDataSource(
+  user: User,
+  latencyMs = 0,
+  kind: "mock" | "local" = "mock",
+): DataSource {
   const ctx = new MockContext(user, undefined, latencyMs);
   const forecast = new MockForecastService(ctx);
   return {
-    kind: "mock",
+    kind,
     dictionaries: mockDictionaryRepository(ctx),
     dashboard: mockDashboardRepository(ctx),
     schools: mockSchoolRepository(ctx),

@@ -59,6 +59,8 @@ export function createApiDataSource(opts: HttpClientOptions): DataSource {
         http.get("/analytics/mobility/breakdown", { ...g(f), dimension }),
       getScatter: (f, x, y, limit) => http.get("/analytics/scatter", { ...g(f), x, y, limit }),
       getHeatmap: (f) => http.get("/analytics/heatmap", g(f)),
+      getLoadScatter: (f, allYears) =>
+        http.get("/analytics/load-scatter", { ...g(f), all_years: allYears }),
     },
     catalog: { get: () => http.get("/data/catalog") },
     model: {

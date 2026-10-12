@@ -10,6 +10,7 @@ import {
   type MobilityGroupRow,
 } from "../../domain/mobility";
 
+import { CRITICAL_LOAD, isCriticalLoad } from "../../domain/features";
 import { NO_CATEGORY, subjectsOf, type TeacherYearSnapshot } from "../../domain/teacher";
 import type {
   CompositionSummary,
@@ -20,6 +21,8 @@ import type {
   DynamicsSummary,
   GlobalFilters,
   HeatmapDto,
+  LoadPoint,
+  LoadScatterDto,
   MobilityDimension,
   MobilityOverview,
   NumericMetric,
@@ -61,7 +64,6 @@ import {
 
 import { MIN_GROUP_SIZE, distributionOf, groupRow, mobilityByGroup } from "../selectors/mobility";
 import type { MockContext } from "./context";
-import { MOCK_DATASET_VERSION, MOCK_UPDATED_AT } from "./mockDataset";
 
 const CATEGORY_ORDER = ["Высшая", "Первая", "Вторая", NO_CATEGORY];
 
@@ -116,7 +118,9 @@ function composition(
       (s) => s.qualificationCategory === "Высшая" || s.qualificationCategory === "Первая",
     ),
     classTeacherShare: shareOf(snaps, (s) => s.isClassTeacher),
-    preprofessionalShare: shareOf(snaps, (s) => s.preprofessionalDirection != null),
+    preprofessionalShare: ctx.index.isAvailable("preprofessional")
+      ? shareOf(snaps, (s) => s.preprofessionalDirection != null)
+      : null,
     byAgeGroup: countBy(snaps, (s) => ageGroupOf(s.age), AGE_GROUPS),
     byExperienceGroup: countBy(
       snaps,
@@ -235,9 +239,11 @@ export function mockDictionaryRepository(ctx: MockContext): DictionaryRepository
         const visibleSchools = new Set(ctx.schoolIds());
         return {
           meta: {
-            datasetVersion: MOCK_DATASET_VERSION,
-            updatedAt: MOCK_UPDATED_AT,
-            isMock: true,
+            datasetVersion: ctx.index.meta.version,
+            updatedAt: ctx.index.meta.updatedAt,
+            isMock: ctx.index.meta.isMock,
+            origin: ctx.index.meta.origin,
+            unavailableFields: ctx.index.meta.unavailableFields,
           },
           scopeSchool:
             ctx.scope.kind === "school"
@@ -500,8 +506,30 @@ export function mockTeacherRepository(ctx: MockContext): TeacherRepository {
               (o): o is NonNullable<typeof o> => o != null && ctx.canViewSchool(o.fromSchoolId),
             )
             .map((o) => ({ period: o.period, status: o.status })),
+          datasetFeatures: ctx.index.features(teacherId, snapshot.year) ?? null,
         };
       }),
+  };
+}
+
+function loadPoint(ctx: MockContext, s: TeacherYearSnapshot): LoadPoint | null {
+  const x = s.pedagogicalExperienceYears;
+  const subjects = subjectsOf(s);
+  const y = ctx.index.features(s.teacherId, s.year)?.n_unique_subjects ?? subjects.length;
+  if (x == null || y == null) return null;
+  const o = ctx.index.outcomeByKey.get(`${s.teacherId}|${s.year}`);
+  return {
+    teacherId: s.teacherId,
+    year: s.year,
+    x,
+    y,
+    critical: isCriticalLoad(x, y),
+    schoolName: ctx.index.schoolById.get(s.schoolId)?.name ?? "—",
+    age: s.age,
+    mainPosition: s.mainPosition,
+    qualificationCategory: s.qualificationCategory,
+    topSubjects: subjects.slice(0, 3),
+    status: o ? o.status : null,
   };
 }
 
@@ -646,6 +674,32 @@ export function mockAnalyticsRepository(ctx: MockContext): AnalyticsRepository {
           minGroupSize: MIN_GROUP_SIZE,
         };
       }),
+    getLoadScatter: (f, allYears) =>
+      ctx.respond<LoadScatterDto>(() => {
+        const years = allYears ? ctx.index.ds.years : [f.year];
+        const points: LoadPoint[] = [];
+        for (const y of years)
+          for (const s of ctx.snapshots(y, f)) {
+            const p = loadPoint(ctx, s);
+            if (p) points.push(p);
+          }
+        const leaveShare = (pts: LoadPoint[]) => {
+          const known = pts.filter((p) => p.status != null);
+          return known.length < MIN_GROUP_SIZE
+            ? null
+            : Math.round((known.filter((p) => p.status === 2).length / known.length) * 1000) / 10;
+        };
+        const critical = points.filter((p) => p.critical);
+        return {
+          years,
+          points,
+          total: points.length,
+          criticalCount: critical.length,
+          leaveShareCritical: leaveShare(critical),
+          leaveShareOther: leaveShare(points.filter((p) => !p.critical)),
+          thresholds: { ...CRITICAL_LOAD },
+        };
+      }),
   };
 }
 
@@ -655,49 +709,65 @@ export function mockCatalogRepository(ctx: MockContext): DataCatalogRepository {
       ctx.respond<DataCatalog>(() => {
         ctx.require("data:catalog");
         const ds = ctx.index.ds;
+        const meta = ctx.index.meta;
         const r = ds.report;
+        const real = !meta.isMock;
+        const status = real ? "real" : "mock";
         return {
-          isMock: true,
-          datasetVersion: MOCK_DATASET_VERSION,
-          updatedAt: MOCK_UPDATED_AT,
+          isMock: meta.isMock,
+          datasetVersion: meta.version,
+          updatedAt: meta.updatedAt,
+          origin: meta.origin,
+          finalTable: ds.features
+            ? {
+                rows: ds.features.length,
+                columns: 30,
+                knownTargetRows: ds.features.filter((f) => f.target != null).length,
+              }
+            : null,
           period: { from: ds.years[0], to: ds.years[ds.years.length - 1] },
           sources: [
             {
               key: "teachers",
-              title: "Учителя",
-              description:
-                "Строка = педагог × предмет × параллель; нормализуется в срез педагог-год",
-              sourceFieldCount: 16,
+              title: real ? "Педагоги" : "Учителя",
+              description: real
+                ? "Строка = педагог × предмет × параллель; в итоговой таблице — педагог × год (только школы из справочника)"
+                : "Строка = педагог × предмет × параллель; нормализуется в срез педагог-год",
+              sourceFieldCount: real ? 15 : 16,
               rawRowCount: r.rawRowCounts.teachers,
               normalizedRecordCount: ds.teacherSnapshots.length,
-              status: "mock",
+              status,
             },
             {
               key: "education",
               title: "Образование",
               description: "Несколько записей на педагога; дубли накопительного итога схлопываются",
-              sourceFieldCount: 6,
+              sourceFieldCount: real ? 5 : 6,
               rawRowCount: r.rawRowCounts.education,
               normalizedRecordCount: ds.education.length,
-              status: "mock",
+              status,
             },
             {
               key: "training",
-              title: "Повышение квалификации",
-              description: "Программы ПК и ПП с часами и датой документа",
-              sourceFieldCount: 6,
+              title: real ? "ПК-ПП" : "Повышение квалификации",
+              description: real
+                ? "Программы ПК и ПП: название, тип, часы, год освоения (организатора в выгрузке нет)"
+                : "Программы ПК и ПП с часами и датой документа",
+              sourceFieldCount: real ? 4 : 6,
               rawRowCount: r.rawRowCounts.training,
               normalizedRecordCount: ds.training.length,
-              status: "mock",
+              status,
             },
             {
               key: "schools",
               title: "Школы",
-              description: "Название, округ, число зданий, численность контингента",
+              description: real
+                ? "Номер школы, округ, число зданий, контингент (одна таблица без разбивки по годам)"
+                : "Название, округ, число зданий, численность контингента",
               sourceFieldCount: 4,
               rawRowCount: r.rawRowCounts.schools,
-              normalizedRecordCount: ds.schoolSnapshots.length,
-              status: "mock",
+              normalizedRecordCount: real ? ds.schools.length : ds.schoolSnapshots.length,
+              status,
             },
           ],
           quality: {
@@ -709,6 +779,7 @@ export function mockCatalogRepository(ctx: MockContext): DataCatalogRepository {
             conflictingTeacherYears: r.conflictingTeacherYears,
             multiSchoolTeacherYears: r.multiSchoolTeacherYears,
             unknownSchoolRows: r.unknownSchoolRows,
+            typosFixed: r.typosFixed ?? null,
             missingValues: Object.entries(r.missingValues).map(([field, count]) => ({
               field,
               count,

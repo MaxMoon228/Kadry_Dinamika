@@ -6,7 +6,7 @@ import type { AccessScope, User } from "../../domain/user";
 import type { GlobalFilters } from "../contracts/dto";
 import { AccessDeniedError } from "../contracts/errors";
 import { periodEndingIn } from "../selectors/mobility";
-import { getMockIndex, type DatasetIndex } from "./mockDataset";
+import { getActiveIndex, type DatasetIndex } from "./mockDataset";
 
 /**
  * Контекст «mock-сервера»: датасет + текущий пользователь. Все выборки проходят через
@@ -17,7 +17,7 @@ export class MockContext {
   readonly scope: AccessScope;
   constructor(
     readonly user: User,
-    readonly index: DatasetIndex = getMockIndex(),
+    readonly index: DatasetIndex = getActiveIndex(),
     readonly latencyMs = 0,
   ) {
     this.scope = scopeOf(user);

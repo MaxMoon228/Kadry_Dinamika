@@ -103,6 +103,22 @@ describe("director scope (имитация серверной авторизац
   });
 });
 
+describe("график нагрузки (стаж × число предметов)", () => {
+  it("директор видит только педагогов своей школы; критерий — стаж < 2 и ≥ 5 предметов", async () => {
+    const dir = createMockDataSource(director);
+    const sys = createMockDataSource(head);
+    const own = await dir.analytics.getLoadScatter(filters, false);
+    const all = await sys.analytics.getLoadScatter(filters, true);
+    expect(own.total).toBeGreaterThan(0);
+    expect(new Set(own.points.map((p) => p.schoolName))).toEqual(
+      new Set([index.schoolById.get(director.schoolId!)!.name]),
+    );
+    expect(all.years).toEqual(index.ds.years);
+    for (const p of all.points) expect(p.critical).toBe(p.x < 2 && p.y >= 5);
+    expect(all.criticalCount).toBe(all.points.filter((p) => p.critical).length);
+  });
+});
+
 describe("mobility aggregation on mock dataset", () => {
   it("распределение за период согласовано с исходами", async () => {
     const sys = createMockDataSource(head);

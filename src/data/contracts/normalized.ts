@@ -1,5 +1,6 @@
 import type { Year } from "../../domain/common";
 import type { TeacherEducation } from "../../domain/education";
+import type { TeacherYearFeatures } from "../../domain/features";
 import type { MobilityOutcome, MobilityPeriod } from "../../domain/mobility";
 import type { School, SchoolYearSnapshot } from "../../domain/school";
 import type { TeacherYearSnapshot } from "../../domain/teacher";
@@ -30,6 +31,21 @@ export interface NormalizationReport {
   unknownSchoolRows: number;
   missingValues: Record<string, number>;
   unknownCategoryValues: string[];
+  /** Исправлено слов с опечатками (только реальный датасет). */
+  typosFixed?: number;
+}
+
+/** Поля, которых нет в конкретном источнике (UI скрывает зависящие от них разрезы). */
+
+export type OptionalField = "preprofessional" | "trainingProvider";
+
+export interface DatasetMeta {
+  version: string;
+  updatedAt: string;
+  isMock: boolean;
+  /** Человекочитаемое происхождение набора. */
+  origin: string;
+  unavailableFields: OptionalField[];
 }
 
 /** Нормализованный датасет: результат ETL, из которого строятся все витрины. */
@@ -44,4 +60,7 @@ export interface NormalizedDataset {
   training: TeacherTraining[];
   outcomes: MobilityOutcome[];
   report: NormalizationReport;
+  /** Признаки итоговой таблицы df_final; есть только у реального датасета. */
+  features?: TeacherYearFeatures[];
+  meta?: DatasetMeta;
 }

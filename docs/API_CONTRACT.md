@@ -31,6 +31,7 @@ TypeScript-типы — источник истины для клиента: `sr
 | GET | `/analytics/mobility/breakdown?year&district&dimension` | `MobilityGroupRow[]` | `analytics:view` (`district` → `system:view`) |
 | GET | `/analytics/scatter?year&district&x&y&limit` | `ScatterPoint[]` (≤ limit, сэмплирование на сервере) | `analytics:view` |
 | GET | `/analytics/heatmap?year&district` | `HeatmapDto` | `analytics:view` |
+| GET | `/analytics/load-scatter?year&district&all_years` | `LoadScatterDto` (все точки «педагог × год»: стаж × число предметов, флаг критической нагрузки, данные для подсказки) | любой (scope) |
 | GET | `/data/catalog` | `DataCatalog` | `data:catalog` |
 | POST | `/forecast` | `ForecastResult` | `forecast:use` |
 | GET | `/forecast/overview?year&district&group_by` | `ForecastOverview` | `forecast:use` (`district` → `system:view`) |
@@ -49,6 +50,18 @@ TypeScript-типы — источник истины для клиента: `sr
 - В аналитических эндпоинтах «за год Y» означает период `Y−1 → Y`. Если периода нет, приходит `mobility: null` или `distribution: null`.
 - В реестре `outcome` — исход периода `year → year+1` (для последнего года `null`).
 - `MobilityGroupRow.suppressed = true`, если группа меньше порога; доли и счётчики в этом случае обнуляются.
+
+## GET /analytics/load-scatter
+
+- `all_years=false` — только срез `year`, `true` — все годы.
+- `points[]`: `teacherId`, `year`, `x` (педагогический стаж), `y` (число разных предметов), `critical`, `schoolName`, `age`, `mainPosition`, `qualificationCategory`, `topSubjects` (≤ 3), `status` (исход `year → year+1` или `null`).
+- `thresholds = {maxExperienceExclusive: 2, minSubjects: 5}` — критерий критической нагрузки.
+- `leaveShareCritical` и `leaveShareOther` — доля ушедших из системы среди точек с известным исходом; `null`, если группа меньше `MIN_GROUP_SIZE`.
+- Ответ содержит десятки тысяч точек (~17 тыс. за год), поэтому backend должен отдавать его сжатым (gzip/br).
+
+## Метаданные набора данных
+
+`Dictionaries.meta`: `isMock`, `origin` (текстовое описание источника), `unavailableFields` (`preprofessional`, `trainingProvider` — UI скрывает зависящие от них разрезы). `TeacherProfileDto.datasetFeatures` — строка итоговой таблицы (`TeacherYearFeatures`) или `null`.
 
 ## POST /forecast
 

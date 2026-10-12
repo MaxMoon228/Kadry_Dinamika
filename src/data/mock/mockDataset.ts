@@ -9,13 +9,22 @@ import type { MobilityOutcome } from "../../domain/mobility";
 import type { School, SchoolYearSnapshot } from "../../domain/school";
 import type { TeacherYearSnapshot } from "../../domain/teacher";
 import type { TeacherTraining } from "../../domain/training";
+import type { TeacherYearFeatures } from "../../domain/features";
 import { normalizeDataset } from "../adapters/normalize";
-import type { NormalizedDataset } from "../contracts/normalized";
+import type { DatasetMeta, NormalizedDataset, OptionalField } from "../contracts/normalized";
 import { generateMockRawDataset } from "./generator";
 
 export const MOCK_DATASET_VERSION = "mock-synthetic-v1";
 
 export const MOCK_UPDATED_AT = "2024-11-18";
+
+const MOCK_META: DatasetMeta = {
+  version: MOCK_DATASET_VERSION,
+  updatedAt: MOCK_UPDATED_AT,
+  isMock: true,
+  origin: "Синтетический генератор (src/data/mock/generator.ts)",
+  unavailableFields: [],
+};
 
 function groupBy<T, K>(items: T[], key: (t: T) => K): Map<K, T[]> {
   const m = new Map<K, T[]>();
@@ -36,7 +45,11 @@ export class DatasetIndex {
   readonly outcomeByKey: Map<string, MobilityOutcome>;
   readonly trainingByTeacher: Map<TeacherId, TeacherTraining[]>;
   readonly educationByTeacher: Map<TeacherId, TeacherEducation[]>;
+  readonly featuresByKey: Map<string, TeacherYearFeatures>;
+  readonly meta: DatasetMeta;
   constructor(readonly ds: NormalizedDataset) {
+    this.meta = ds.meta ?? MOCK_META;
+    this.featuresByKey = new Map((ds.features ?? []).map((f) => [`${f.teacherId}|${f.year}`, f]));
     this.schoolById = new Map(ds.schools.map((s) => [s.id, s]));
     this.snapshotsByYear = groupBy(ds.teacherSnapshots, (s) => s.year);
     this.snapshotsByTeacher = groupBy(ds.teacherSnapshots, (s) => s.teacherId);
@@ -53,6 +66,12 @@ export class DatasetIndex {
   schoolYear(schoolId: SchoolId, year: Year): SchoolYearSnapshot | undefined {
     return this.schoolSnapshot.get(`${schoolId}|${year}`);
   }
+  features(teacherId: TeacherId, year: Year): TeacherYearFeatures | undefined {
+    return this.featuresByKey.get(`${teacherId}|${year}`);
+  }
+  isAvailable(field: OptionalField): boolean {
+    return !this.meta.unavailableFields.includes(field);
+  }
 }
 
 let cached: DatasetIndex | null = null;
@@ -60,4 +79,16 @@ let cached: DatasetIndex | null = null;
 export function getMockIndex(): DatasetIndex {
   if (!cached) cached = new DatasetIndex(normalizeDataset(generateMockRawDataset()));
   return cached;
+}
+
+let active: DatasetIndex | null = null;
+
+/** Набор, на котором работает in-memory источник: реальный (локальный режим) или mock. */
+
+export function getActiveIndex(): DatasetIndex {
+  return active ?? getMockIndex();
+}
+
+export function setActiveIndex(index: DatasetIndex | null): void {
+  active = index;
 }
